@@ -1,6 +1,17 @@
 all: udp-client udp-server
 APPS=servreg-hack
 CONTIKI=../../..
+MCMACDIR=.
+PROJECTDIRS += $(MCMACDIR) 
+
+CONFIG_NULLRDC=1 
+CONFIG_CONTIKIMAC=2 
+CONFIG_MICMAC=3
+
+CMD_CONFIG ?= $(CONFIG_MICMAC)
+#CMD_CONFIG ?= $(CONFIG_CONTIKIMAC)
+
+CFLAGS+= -DCONFIG_NULLRDC=$(CONFIG_NULLRDC) -DCONFIG_CONTIKIMAC=$(CONFIG_CONTIKIMAC) -DCONFIG_MICMAC=$(CONFIG_MICMAC) -DCONFIG=$(CMD_CONFIG)
 
 ifdef WITH_COMPOWER
 APPS+=powertrace
@@ -15,4 +26,49 @@ CFLAGS+=-DPERIOD=$(PERIOD)
 endif
 
 CONTIKI_WITH_IPV6 = 1
+CFLAGS+=-DCONTIKI_WITH_IPV6=1
+
+TIMEDATE=`date +%Y%m%d-%H%M`
+
+CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
+
+#for local version mccontikimac
+#CONTIKIDIRS += $(MCMACDIR) $(MCMACDIR)/net $(MCMACDIR)/net/mac timer32bit
+#CONTIKI_SOURCEFILES += mccontikimac.c mcphase.c csma.c clock.c rtimer-arch.c
+
+CONTIKIDIRS += $(MCMACDIR) $(MCMACDIR)/net $(MCMACDIR)/net/mac
+CONTIKI_SOURCEFILES += mccontikimac.c mcphase.c csma.c 
+
+CFLAGS+= -iquote -Werror
+
+#messages IPI is 4 seconds
+IPI ?= 4
+CFLAGS += -DCMD_IPI=$(IPI)
+
+CHECKRATE ?= 8
+CFLAGS += -DCMD_CHECKRATE=$(CHECKRATE)
+
+RF_CHANNEL ?= 26
+CFLAGS += -DCMD_RF_CHANNEL=$(RF_CHANNEL)
+
+NUM_CHANNELS ?= 4
+CFLAGS += -DCMD_NUM_CHANNELS=$(NUM_CHANNELS)
+
+BC_CHANNELS ?= 0
+CFLAGS += -DCMD_BC_CHANNELS=$(BC_CHANNELS)
+
+#useful only if one BC channel is used
+BC_RF_CHANNEL ?= 20
+CFLAGS += -DCMD_BC_RF_CHANNEL=$(BC_RF_CHANNEL)
+
+
+PAN_ID ?= 0xBBBB
+CFLAGS += -DCMD_PAN_ID=$(PAN_ID)
+
+all: $(CONTIKI_PROJECT)
+
 include $(CONTIKI)/Makefile.include
+
+cooja:
+	ant run -f $(CONTIKI)/tools/cooja/build.xml
+	
